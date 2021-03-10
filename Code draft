@@ -1,0 +1,161 @@
+from tkinter import *
+from tkinter import ttk
+import tkinter.messagebox as tkMessageBox
+
+import pymysql
+
+
+
+
+
+class ConnectorDB:
+
+    def __init__(self,root):
+        self.root = root
+        titlespace = " "
+        self.root.title(102 * titlespace + "Inventory Management")
+        self.root.geometry("800x700+300+0")
+        self.root.resizable (width =False, height = False)
+
+        MainFrame = Frame (self.root, bd=10, width =770, height = 700, relief = RIDGE, bg ='cadet blue') 
+        MainFrame.grid()
+
+        TitleFrame = Frame(MainFrame ,bd=7, width =770, height=100   , relief= RIDGE)
+        TitleFrame.grid(row = 0, column = 0)
+        TopFrame3 = Frame (MainFrame ,bd=7, width =770, height=100   , relief= RIDGE)
+        TopFrame3.grid(row = 1, column = 0)
+
+        LeftFrame = Frame (TopFrame3 ,bd=5, width =770, height=400, padx=2, bg ='cadet blue' , relief= RIDGE)
+        LeftFrame.pack(side=LEFT)
+        LeftFrame1 = Frame (LeftFrame ,bd=5, width =600, height=180, padx=2, pady=4, relief= RIDGE)
+        LeftFrame1.pack(side=TOP,padx=0,pady=0)
+
+        RightFrame1 = Frame (TopFrame3 ,bd=5, width =770, height=400, padx=2, bg ='cadet blue' , relief= RIDGE)
+        RightFrame1.pack(side=RIGHT)
+        RightFrame1a = Frame (RightFrame1 ,bd=5, width =90, height=300, padx=2, pady=2, relief= RIDGE)
+        RightFrame1a.pack(side=TOP)
+        #-------------------------------------------------------------------------------------------------
+        ProductID=StringVar()
+        SerielNumber=StringVar()
+        ProductName=StringVar()
+        ProductQunaity=StringVar()
+        ProductPrice=StringVar()
+       
+        #-------------------------------------------------------------------------------------------------
+
+        def iExit(): 
+            iExit = tkMessageBox.askyesno("Inventory Manager","Confirm if you want to exit")
+            if iExit > 0:
+                root.destory()
+                return
+
+        def Reset():
+            self.entProductID.delete(0,END)
+            self.entSerielNumber.delete(0,END)
+            self.entProductName.delete(0,END)
+            self.entProductQuanity.delete(0,END)  
+            self.entProductPrice.delete(0,END)              
+
+                    
+
+        #-------------------------------------------------------------------------------------------------
+        self.lbltitle=Label (TitleFrame, font=('arial', 40, 'bold'), text = "Inventory Manager", bd=7)
+        self.lbltitle.grid(row=0, column=0, padx=132)
+
+        self.lblProductID=Label (LeftFrame1, font=('arial', 12, 'bold'), text = "Product ID", bd=7)
+        self.lblProductID.grid(row=1, column=0, sticky=W,  padx=5)
+        self.entProductID=Entry (LeftFrame1, font=('arial', 12, 'bold'),bd=5, width=44, justify='left', textvariable= ProductID)
+        self.entProductID.grid(row=1, column=1, sticky=W,  padx=5)
+
+        self.lblSerielNumber=Label (LeftFrame1, font=('arial', 12, 'bold'), text = "Seriel Number", bd=7)
+        self.lblSerielNumber.grid(row=2, column=0, sticky=W,  padx=5)
+        self.entSerielNumber=Entry (LeftFrame1, font=('arial', 12, 'bold'),bd=5, width=44, justify='left', textvariable= SerielNumber)
+        self.entSerielNumber.grid(row=2, column=1, sticky=W,  padx=5)
+
+        self.lblProductName=Label (LeftFrame1, font=('arial', 12, 'bold'), text = "Product Name", bd=7)
+        self.lblProductName.grid(row=3, column=0, sticky=W,  padx=5)
+        self.entProductName=Entry (LeftFrame1, font=('arial', 12, 'bold'),bd=5, width=44, justify='left', textvariable= ProductName)
+        self.entProductName.grid(row=3, column=1, sticky=W,  padx=5)
+
+        self.lblProductQuanity=Label (LeftFrame1, font=('arial', 12, 'bold'), text = "Product Quanity", bd=7)
+        self.lblProductQuanity.grid(row=4, column=0, sticky=W,  padx=5)
+        self.entProductQuanity=Entry (LeftFrame1, font=('arial', 12, 'bold'),bd=5, width=44, justify='left', textvariable= ProductQunaity)
+        self.entProductQuanity.grid(row=4, column=1, sticky=W,  padx=5)
+
+        self.lblProductPrice=Label (LeftFrame1, font=('arial', 12, 'bold'), text = "Product Price", bd=7)
+        self.lblProductPrice.grid(row=5, column=0, sticky=W,  padx=5)
+        self.entProductPrice=Entry (LeftFrame1, font=('arial', 12, 'bold'),bd=5, width=44, justify='left', textvariable= ProductPrice)
+        self.entProductPrice.grid(row=5, column=1, sticky=W,  padx=5)
+
+        self.lblProductPrice=Label (LeftFrame1, font=('arial', 12, 'bold'), text = "Description", bd=7)
+        self.lblProductPrice.grid(row=6, column=0, sticky=W,  padx=5)
+        self.entProductPrice=Text(LeftFrame1, font=('arial', 12, 'bold'),bd=5, height =10, width=44)
+        self.entProductPrice.grid(row=6, column=1, sticky=W,  padx=5)
+
+        
+        
+        #-------------------------------------Table View---------------------------------------------------
+        
+        def View():
+
+            MainFrame.destroy
+
+            top= Toplevel()
+            top.title('ViewAll')
+
+            scroll_y = Scrollbar(top, orient = HORIZONTAL)
+
+            self.product_records=ttk.Treeview (top, height =12, columns= ("productid","productname","productquanity","productprice","serielnumber"),yscrollcommand = scroll_y.set )
+
+            scroll_y.pack(side = RIGHT, fill=Y)
+
+            self.product_records.heading("productid", text= "Product ID")
+            self.product_records.heading("productname", text= "Product Name")
+            self.product_records.heading("productquanity", text= "Product Quanity")
+            self.product_records.heading("productprice", text= "Product Price")
+            self.product_records.heading("serielnumber", text= "Seriel Number")
+
+            self.product_records['show'] = 'headings'
+
+            self.product_records.column("productid", width = 70)
+            self.product_records.column("productname", width = 70)
+            self.product_records.column("productquanity", width = 70)
+            self.product_records.column("productprice", width = 70)
+            self.product_records.column("serielnumber", width =70)
+
+            self.product_records.pack(fill =BOTH, expand=1)
+
+
+
+        #------------------------------------------------Buttton-------------------------------------------
+
+        self.btnAddNew=Button(RightFrame1a, font=('arial', 12, 'bold'), text = "Add New", bd=7, pady=1, padx=24,
+            width = 8, height=2).grid(row=1,column =0, padx=1) 
+        self.btnAddNew=Button(RightFrame1a, font=('arial', 12, 'bold'), text = "Display", bd=7, pady=1, padx=24,
+            width = 8, height=2, command = View).grid(row=2,column =0, padx=1) 
+        self.btnAddNew=Button(RightFrame1a, font=('arial', 12, 'bold'), text = "Update", bd=7, pady=1, padx=24,
+            width = 8, height=2).grid(row=3,column =0, padx=1) 
+        self.btnAddNew=Button(RightFrame1a, font=('arial', 12, 'bold'), text = "Delete", bd=7, pady=1, padx=24,
+            width = 8, height=2).grid(row=4,column =0, padx=1) 
+        self.btnAddNew=Button(RightFrame1a, font=('arial', 12, 'bold'), text = "Search", bd=7, pady=1, padx=24,
+            width = 8, height=2).grid(row=5,column =0, padx=1) 
+        self.btnAddNew=Button(RightFrame1a, font=('arial', 12, 'bold'), text = "Reset", bd=7, pady=1, padx=24,
+            width = 8, height=2, command = Reset).grid(row=6,column =0, padx=1)
+        self.btnAddNew=Button(RightFrame1a, font=('arial', 12, 'bold'), text = "Exit", bd=7, pady=1, padx=24,
+            width = 8, height=2, command = iExit).grid(row=7,column =0, padx=1)                   
+
+
+        #--------------------------------------------------------------------------------------------------
+        #--------------------------------------------------------------------------------------------------
+
+
+        
+
+if __name__=='__main__':
+    root = Tk()
+    application = ConnectorDB(root)
+    root.mainloop()
+
+#Time to Install
+#Est. Delivery Time
+#Descrp Box
