@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
 import mysql.connector
 
 root = Tk()
@@ -8,7 +9,7 @@ root.title('Inventory Management - by MetSystems Inc.')
 root.geometry("800x950")
 root.config(bg="#BDBDBD")
 
-#====Database====#
+#====Connect to Database====#
 mydb = mysql.connector.connect(
     host="localhost",
     user="root",
@@ -75,6 +76,7 @@ class Products:
             for row in myresult:
                 prod_tree.insert('', 'end', iid=count, text="", values=(row[0], row[1], row[2], row[3], row[4]))
                 count += 1
+            mycursor.close()
 
         #def sortBy():
             #insert SQL script to SELECT and ORDER BY
@@ -100,7 +102,9 @@ class Products:
         prod_tree.heading("Qty Available", text="Qty Available")
         prod_tree.heading("Qty On Hand", text="Qty On Hand")
 
+        
         selectEntries()
+        
         prod_tree.pack()
         tree_scroll.config(command=prod_tree.yview)
 
@@ -178,19 +182,27 @@ class Products:
         delivery_time_Label = Label(bottomFrame2, text="Est. Delivery Time: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=9, sticky=W)
         delivery_time_Label2 = Label(bottomFrame2, text=" days       ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=9, column=1, sticky=E)
 
+        #====Create Variables====#
+        serial_num_var = IntVar()
+        item_name_var = StringVar()
+        price_listed_var = IntVar()
+        price_cost_var = IntVar()
+        unit_var = StringVar()
+        install_time_var = IntVar()
+        delivery_time_var = IntVar()
 
         #====Input Field Entries====#
-        serial_num = Entry(bottomFrame2, font=('arial', 16), width=30, justify='center').grid(row=0, column=1, pady=5)
-        item_name = Entry(bottomFrame2, font=('arial', 16), width=30, justify='center').grid(row=1, column=1, pady=5)
+        serial_num = Entry(bottomFrame2, textvariable=serial_num_var, font=('arial', 16), width=30, justify='center')
+        item_name = Entry(bottomFrame2, textvariable=item_name_var, font=('arial', 16), width=30, justify='center')
         # dropdown
         dropdown_sup = StringVar(bottomFrame2)
         dropdown_sup.set("Choose One")
         dd_sup = OptionMenu(bottomFrame2, dropdown_sup, "1", "2", "3") #SQL list of suppliers)
         dd_sup.config(width=53, anchor=W)
         dd_sup.grid(row=2, column=1, pady=5)
-        price_listed = Entry(bottomFrame2, font=('arial', 16), width=30, justify='center').grid(row=3, column=1, pady=5)
-        price_cost = Entry(bottomFrame2, font=('arial', 16), width=30, justify='center').grid(row=4, column=1, pady=5)
-        unit = Entry(bottomFrame2, font=('arial', 16), width=30, justify='center').grid(row=5, column=1, pady=5)
+        price_listed = Entry(bottomFrame2, textvariable=price_listed_var, font=('arial', 16), width=30, justify='center')
+        price_cost = Entry(bottomFrame2, textvariable=price_cost_var, font=('arial', 16), width=30, justify='center')
+        unit = Entry(bottomFrame2,  textvariable=unit_var, font=('arial', 16), width=30, justify='center')
         # change to treeview -> predecessors = Entry(bottomFrame2, font=('arial', 16), width=30, justify='center').grid(row=7, column=1)
         tree_scroll = Scrollbar(bottomFrame2, orient=VERTICAL)
         tree_scroll.grid(row=6, column=2, rowspan=2, sticky='ns', pady=5)
@@ -210,13 +222,45 @@ class Products:
         pred_tree.grid(row=6, rowspan=2, column=1, pady=5)
         tree_scroll.config(command=pred_tree.yview)
         
-        install_time = Entry(bottomFrame2, font=('arial', 16), width=23, justify='center').grid(row=8, column=1, pady=5, sticky=W)
-        delivery_time = Entry(bottomFrame2, font=('arial', 16), width=23, justify='center').grid(row=9, column=1, pady=5, sticky=W)
+        install_time = Entry(bottomFrame2, textvariable=install_time_var, font=('arial', 16), width=23, justify='center')
+        delivery_time = Entry(bottomFrame2, textvariable=delivery_time_var, font=('arial', 16), width=23, justify='center')
 
+        #====Grid Inserts====#
+        serial_num.grid(row=0, column=1, pady=5)
+        item_name.grid(row=1, column=1, pady=5)
+        price_listed.grid(row=3, column=1, pady=5)
+        price_cost.grid(row=4, column=1, pady=5)
+        unit.grid(row=5, column=1, pady=5)
+        install_time.grid(row=8, column=1, pady=5, sticky=W)
+        delivery_time.grid(row=9, column=1, pady=5, sticky=W)
+
+        def write2db():
+            ###UPDATE THIS SCRIPT###
+            insertNewProduct = """INSERT INTO (product_supplier_id, product_number, product_name, product_quantity_available, \
+            product_quantity_onhand, product_price, product_cost, product_unit, product_part_predecessor) \
+            VALUES ({},{},{},{},{},{},{},{},{})"""
+
+            product_records = (dropdown_sup, serial_num.get(), item_name.get(), 0, 0, price_listed.get(), price_cost.get(), unit.get(), install_time.get(), delivery_time.get(), int(pred_tree.item(pred_tree.selection(),"ID")))
+
+            with mydb.cursor() as cursor:
+                cursor.execute(insertNewProduct, product_records)
+                mydb.commit()
+                cursor.close()
+            
+        def clearEntries():
+            serial_num_var.set('')
+            item_name_var.set('')
+            dropdown_sup.set("Choose One")
+            price_listed_var.set('')
+            price_cost_var.set('')
+            unit_var.set('')
+            install_time_var.set('')
+            delivery_time_var.set('')
+            pred_tree.selection_clear() #this might not work
 
         #====Buttons====#
-        save_btn = Button(btnFrame2, text="Save", height=2, width=20).grid(row=0, column=0, padx=10, pady=15)
-        clear_btn = Button(btnFrame2, text="Clear", height=2, width=20).grid(row=0, column=1, padx=10, pady=15)
+        save_btn = Button(btnFrame2, text="Save", height=2, width=20, command=write2db).grid(row=0, column=0, padx=10, pady=15)
+        clear_btn = Button(btnFrame2, text="Clear", height=2, width=20, command=clearEntries).grid(row=0, column=1, padx=10, pady=15)
 
 
 class Parts:
@@ -395,12 +439,23 @@ viewPartsBTN.pack(pady=20)
 viewVendorsBTN = Button(bottomFrame, text="View Vendors", padx=103, pady=20, font="Verdana 16", command=Vendors.viewVendor)
 viewVendorsBTN.pack(pady=20)
 
-updateQuantityBTN = Button(bottomFrame, text="Update Qty", padx=114, pady=20, font="Verdana 16", command=Quantity.updateQty)
+updateQuantityBTN = Button(bottomFrame, text="Update Qty", padx=114, pady=20, font="Verdana 16", command=mydb.close)
 updateQuantityBTN.pack(pady=20)
 
+
+def close_window():
+    msg = messagebox.askquestion("Quit", "Are you sure you want to quit?", icon="warning")
+    if msg == "yes":
+        mydb.close()
+        mydb.disconnect()
+        print(mydb)
+        root.destroy()
+
+root.protocol("WM_DELETE_WINDOW", close_window)
 
 
 
 #run the main loop -- this is the program running
 root.mainloop()
-mydb.close()
+#=====End DB Connection====#
+#mydb.close()
