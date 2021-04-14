@@ -13,7 +13,7 @@ root.config(bg="#BDBDBD")
 mydb = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="thisisnotapassword",
+    password="password",
     database="inventory_database"
 )
 
@@ -31,6 +31,8 @@ bottomFrame.pack()
 
 header = Label(topFrame, text="Inventory Management", height=2, width=100, fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold")
 header.pack()
+
+
 
 class Products:
     def viewProd():
@@ -66,6 +68,8 @@ class Products:
 
         okBTN = Button(topFrame, text="GO")#, command=sortBy)
         okBTN.grid(row=1, column=1, sticky=E)
+
+        
 
         #====SELECT from DB====#
         def selectEntries():
@@ -108,7 +112,20 @@ class Products:
         prod_tree.pack()
         tree_scroll.config(command=prod_tree.yview)
 
+        def selectItem(a):
+            curItem = prod_tree.focus()
+            print (prod_tree.item(curItem))
+            global y
+            x = (prod_tree.item(curItem, 'values'))
+            y = (x[0]) 
 
+           
+
+        #a = prod_tree.bind('<ButtonRelease-1>', selectItem)
+
+        prod_tree.bind('<ButtonRelease-1>', selectItem)
+        
+        #print (a)
 
         #=====Buttons=====#
         addProductBTN = Button(bottomFrame, text="Add New Product", padx=20, pady=10, font="Verdana 14", command=Products.addProduct)
@@ -120,7 +137,14 @@ class Products:
         delProductBTN = Button(bottomFrame, text="Delete Product", padx=20, pady=10, font="Verdana 14")#, command=Products.viewInfo)
         delProductBTN.grid(column=2, row=0, padx=20)
 
+      
+
+    
+
     def viewInfo():
+        print (y)
+
+
         top = Toplevel()
         top.title('Add New Item')
         #top.iconbitmap('C:/Users/Jason/Documents/GMU/2021-01-Spring/IT-493_Capstone/ProjectFiles/favicon.ico')
@@ -142,6 +166,95 @@ class Products:
         add_label = Label(topFrame, text="View Record Info", fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold").pack()
         top.geometry("800x950")
         top.config(bg="#BDBDBD")
+
+        #-----------------------------#
+        #====Create Variables====#
+        serial_num_var = IntVar()
+        item_name_var = StringVar()
+        price_listed_var = IntVar()
+        price_cost_var = IntVar()
+        unit_var = StringVar()
+        install_time_var = IntVar()
+        delivery_time_var = IntVar()
+
+        
+        mycursor = mydb.cursor()
+        mycursor.execute("SELECT * FROM product WHERE product_id = {};".format(y))
+        myresult = mycursor.fetchall()
+           
+        for row in myresult:
+            serial_num_var.set(row[2]) 
+            item_name_var.set(row[3]) 
+            price_listed_var.set(row[6]) 
+            price_cost_var.set(row[7]) 
+            unit_var.set(row[8])
+            install_time_var.set(row[10])
+            delivery_time_var.set(row[11])
+                
+        mycursor.close()
+
+
+         #====Input Field Labels====#
+        serial_num_Label = Label(bottomFrame, text="Serial Number: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=0, sticky=W)
+        item_name_Label = Label(bottomFrame, text="Item Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=1, sticky=W)
+        Supplier_Label = Label(bottomFrame, text="Supplier: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=2, sticky=W)
+        price_listed_Label = Label(bottomFrame, text="Listed Price: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=3, sticky=W)
+        price_cost_Label = Label(bottomFrame, text="Price Cost: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=4, sticky=W)
+        unit_Label = Label(bottomFrame, text="Unit: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=5, sticky=W)
+        predecessors_Label = Label(bottomFrame, text="Predecessors: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=6, sticky='nw')
+        #Row 7 reserved for Treeviews
+        install_time_Label = Label(bottomFrame, text="Install Time: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=8, sticky=W)
+        install_time_Label2 = Label(bottomFrame, text=" days       ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=8, column=1, sticky=E)
+        delivery_time_Label = Label(bottomFrame, text="Est. Delivery Time: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=9, sticky=W)
+        delivery_time_Label2 = Label(bottomFrame, text=" days       ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=9, column=1, sticky=E)
+
+        
+
+        #====Input Field Entries====#
+        serial_num = Entry(bottomFrame, textvariable=serial_num_var, font=('arial', 16), width=30, justify='center')
+        item_name = Entry(bottomFrame, textvariable=item_name_var, font=('arial', 16), width=30, justify='center')
+        # dropdown
+        dropdown_sup = StringVar(bottomFrame)
+        dropdown_sup.set("Choose One")
+        dd_sup = OptionMenu(bottomFrame, dropdown_sup, "1", "2", "3") #SQL list of suppliers)
+        dd_sup.config(width=53, anchor=W)
+        dd_sup.grid(row=2, column=1, pady=5)
+        price_listed = Entry(bottomFrame, textvariable=price_listed_var, font=('arial', 16), width=30, justify='center')
+        price_cost = Entry(bottomFrame, textvariable=price_cost_var, font=('arial', 16), width=30, justify='center')
+        unit = Entry(bottomFrame,  textvariable=unit_var, font=('arial', 16), width=30, justify='center')
+        # change to treeview -> predecessors = Entry(bottomFrame2, font=('arial', 16), width=30, justify='center').grid(row=7, column=1)
+        tree_scroll = Scrollbar(bottomFrame, orient=VERTICAL)
+        tree_scroll.grid(row=6, column=2, rowspan=2, sticky='ns', pady=5)
+
+        pred_tree = ttk.Treeview(bottomFrame, yscrollcommand=tree_scroll.set, height=10)
+        pred_tree['columns'] = ("ID", "Serial Number", "Name")
+        
+        pred_tree.column("#0", width=0, stretch=NO)
+        pred_tree.column("ID", width=50, anchor=E)
+        pred_tree.column("Serial Number", width=100, anchor=E)
+        pred_tree.column("Name", width=210, anchor=CENTER)
+
+        pred_tree.heading("#0", text="")
+        pred_tree.heading("ID", text="ID")
+        pred_tree.heading("Serial Number", text="Serial #")
+        pred_tree.heading("Name", text="Name")
+        pred_tree.grid(row=6, rowspan=2, column=1, pady=5)
+        tree_scroll.config(command=pred_tree.yview)
+        
+        install_time = Entry(bottomFrame, textvariable=install_time_var, font=('arial', 16), width=23, justify='center')
+        delivery_time = Entry(bottomFrame, textvariable=delivery_time_var, font=('arial', 16), width=23, justify='center')
+
+        #====Grid Inserts====#
+        serial_num.grid(row=0, column=1, pady=5)
+        item_name.grid(row=1, column=1, pady=5)
+        price_listed.grid(row=3, column=1, pady=5)
+        price_cost.grid(row=4, column=1, pady=5)
+        unit.grid(row=5, column=1, pady=5)
+        install_time.grid(row=8, column=1, pady=5, sticky=W)
+        delivery_time.grid(row=9, column=1, pady=5, sticky=W)
+
+       
+      
 
 
     def addProduct():
@@ -439,7 +552,7 @@ viewPartsBTN.pack(pady=20)
 viewVendorsBTN = Button(bottomFrame, text="View Vendors", padx=103, pady=20, font="Verdana 16", command=Vendors.viewVendor)
 viewVendorsBTN.pack(pady=20)
 
-updateQuantityBTN = Button(bottomFrame, text="Update Qty", padx=114, pady=20, font="Verdana 16", command=mydb.close)
+updateQuantityBTN = Button(bottomFrame, text="Update Qty", padx=114, pady=20, font="Verdana 16", command=Quantity.updateQty)
 updateQuantityBTN.pack(pady=20)
 
 
