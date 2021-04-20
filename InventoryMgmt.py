@@ -13,7 +13,7 @@ root.config(bg="#BDBDBD")
 mydb = mysql.connector.connect(
     host="localhost",
     user="root",
-    password="password",
+    password="thisisnotapassword",
     database="inventory_database"
 )
 
@@ -377,7 +377,6 @@ class Products:
 
 
 class Parts:
-
     def viewPart():
         top = Toplevel()
         top.title('Inventory Management - by MetSystems Inc.')
@@ -397,7 +396,7 @@ class Parts:
         bottomFrame.pack(pady=20)
 
         #=====header label=====#
-        add_label = Label(topFrame, text="          Part          ", fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold").grid(row=0, pady=20)
+        add_label = Label(topFrame, text="          Parts          ", fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold").grid(row=0, pady=20)
         top.geometry("800x950")
         top.config(bg="#BDBDBD")
 
@@ -464,7 +463,7 @@ class Parts:
 
            
 
-        #a = prod_tree.bind('<ButtonRelease-1>', selectItem)
+        #a = part_tree.bind('<ButtonRelease-1>', selectItem)
 
         part_tree.bind('<ButtonRelease-1>', selectItem)
         
@@ -566,7 +565,7 @@ class Parts:
         price_cost = Entry(bottomFrame, textvariable=price_cost_var, font=('arial', 16), width=30, justify='center')
         unit = Entry(bottomFrame,  textvariable=unit_var, font=('arial', 16), width=30, justify='center')
         # change to treeview -> predecessors = Entry(bottomFrame2, font=('arial', 16), width=30, justify='center').grid(row=7, column=1)
-        
+       
         
         install_time = Entry(bottomFrame, textvariable=install_time_var, font=('arial', 16), width=23, justify='center')
         delivery_time = Entry(bottomFrame, textvariable=delivery_time_var, font=('arial', 16), width=23, justify='center')
@@ -581,6 +580,7 @@ class Parts:
         delivery_time.grid(row=9, column=1, pady=5, sticky=W)
 
        
+
       
 
 
@@ -660,8 +660,8 @@ class Parts:
 
         def write2db():
             ###UPDATE THIS SCRIPT###
-            insertNewPart = """INSERT INTO (part_supplier_id, part_serial_no, part_name, part_quantity_available, \
-            part_quantity_onhand, part_price, part_cost, part_unit, part_install_time, part_estimated_delivery_time) \
+            insertNewPart = """INSERT INTO (part_supplier_id, part_number, part_name, part_quantity_available, \
+            part_quantity_onhand, part_price, part_cost, part_unit, part_install_time, part_estimated_deliver_time) \
             VALUES ({},{},{},{},{},{},{},{},{},{})"""
 
             part_records = (dropdown_sup, serial_num.get(), item_name.get(), 0, 0, price_listed.get(), price_cost.get(), unit.get(), install_time.get(), delivery_time.get())
@@ -680,14 +680,11 @@ class Parts:
             unit_var.set('')
             install_time_var.set('')
             delivery_time_var.set('')
-             #this might not work
+            
 
         #====Buttons====#
         save_btn = Button(btnFrame2, text="Save", height=2, width=20, command=write2db).grid(row=0, column=0, padx=10, pady=15)
         clear_btn = Button(btnFrame2, text="Clear", height=2, width=20, command=clearEntries).grid(row=0, column=1, padx=10, pady=15)
-
-
-
 
 
 class Vendors:
@@ -710,7 +707,7 @@ class Vendors:
         bottomFrame.pack(pady=20)
 
         #=====header label=====#
-        add_label = Label(topFrame, text="          Supplier         ", fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold").grid(row=0, pady=20)
+        add_label = Label(topFrame, text="          Suppliers          ", fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold").grid(row=0, pady=20)
         top.geometry("800x950")
         top.config(bg="#BDBDBD")
 
@@ -730,11 +727,11 @@ class Vendors:
         #====SELECT from DB====#
         def selectEntries():
             mycursor = mydb.cursor()
-            mycursor.execute("SELECT supplier_id, supplier_company, supplier_contact_first, supplier_contact_last, supplier_contact_email, supplier_contact_phone FROM supplier")
+            mycursor.execute("SELECT supplier_id, supplier_company, supplier_contact_first, supplier_contact_last, supplier_email, supplier_contact_phone FROM supplier")
             myresult = mycursor.fetchall()
             count = 0
             for row in myresult:
-                supplier_tree.insert('', 'end', iid=count, text="", values=(row[0], row[1], concat(row[2], row[3]), row[4], row[5))
+                supplier_tree.insert('', 'end', iid=count, text="", values=(row[0], row[1], row[2], row[3], row[4], row[5]))
                 count += 1
             mycursor.close()
 
@@ -746,19 +743,21 @@ class Vendors:
         tree_scroll.pack(side=RIGHT, fill=Y)
 
         supplier_tree = ttk.Treeview(midFrame, yscrollcommand=tree_scroll.set, height=30)
-        supplier_tree['columns'] = ("ID", "Name", "Contact Name", "Contact Email", "Contact Phone")
+        supplier_tree['columns'] = ("ID", "Name", "Contact First Name", "Contact Last Name", "Contact Email", "Contact Phone")
         
         supplier_tree.column("#0", width=0, stretch=NO)
         supplier_tree.column("ID", width=50, anchor=E)
         supplier_tree.column("Name", width=300, anchor=CENTER)
-        supplier_tree.column("Contact Name", width=100, anchor=E)
+        supplier_tree.column("Contact First Name", width=100, anchor=CENTER)
+        supplier_tree.column("Contact Last Name", width=100, anchor=CENTER)
         supplier_tree.column("Contact Email", width=100, anchor=CENTER)
         supplier_tree.column("Contact Phone", width=100, anchor=CENTER)
 
         supplier_tree.heading("#0", text="")
         supplier_tree.heading("ID", text="ID")
         supplier_tree.heading("Name", text="Name")
-        supplier_tree.heading("Contact Name", text="Contact Name")
+        supplier_tree.heading("Contact First Name", text="Contact First Name")
+        supplier_tree.heading("Contact Last Name", text="Contact Last Name")
         supplier_tree.heading("Contact Email", text="Contact Email")
         supplier_tree.heading("Contact Phone", text="Contact Phone")
 
@@ -777,14 +776,14 @@ class Vendors:
 
            
 
-        #a = prod_tree.bind('<ButtonRelease-1>', selectItem)
+        #a = supplier_tree.bind('<ButtonRelease-1>', selectItem)
 
         supplier_tree.bind('<ButtonRelease-1>', selectItem)
         
         #print (a)
 
         #=====Buttons=====#
-        addSupplierBTN = Button(bottomFrame, text="Add New Supplier", padx=20, pady=10, font="Verdana 14", command=Vendors.addsupplier)
+        addSupplierBTN = Button(bottomFrame, text="Add New Supplier", padx=20, pady=10, font="Verdana 14", command=Vendors.addSupplier)
         addSupplierBTN.grid(column=0, row=0, padx=20)
 
         viewSupplierBTN = Button(bottomFrame, text="View/Edit", padx=20, pady=10, font="Verdana 14", command=Vendors.viewInfo)
@@ -802,7 +801,7 @@ class Vendors:
 
 
         top = Toplevel()
-        top.title('View Suppliers')
+        top.title('Add New Item')
         #top.iconbitmap('C:/Users/Jason/Documents/GMU/2021-01-Spring/IT-493_Capstone/ProjectFiles/favicon.ico')
         
         #====window frames=====#
@@ -810,11 +809,11 @@ class Vendors:
         topFrame.config(bg="#BDBDBD")
         topFrame.pack(pady=50)
 
-        bottomFrame = Frame(top, highlightbackground="white", highlightthickness=4)
+        bottomFrame = Frame(top)
         bottomFrame.config(bg="#BDBDBD")
         bottomFrame.pack()
 
-        btnFrame = Frame(top, highlightbackground="black", highlightthickness=4)
+        btnFrame = Frame(top)
         btnFrame.config(bg="#BDBDBD")
         btnFrame.pack(pady=0)
 
@@ -825,6 +824,7 @@ class Vendors:
 
         #-----------------------------#
         #====Create Variables====#
+        
         supplier_name_var = StringVar()
         contact_first_var = StringVar()
         contact_last_var = StringVar()
@@ -834,6 +834,7 @@ class Vendors:
         city_var = StringVar()
         state_var = StringVar()
         zip_var = IntVar()
+        
 
         
         mycursor = mydb.cursor()
@@ -845,64 +846,80 @@ class Vendors:
             contact_first_var.set(row[2]) 
             contact_last_var.set(row[3]) 
             contact_email_var.set(row[4]) 
-            contact_phone_var.set(row[5]) 
-            address_var.set(row[6])  
-            city_var.set(row[7]) 
-            state_var.set(row[8]) 
-            zip_var.set(row[9]) 
+            contact_phone_var.set(row[5])
+            address_var.set(row[6])
+            city_var.set(row[7])
+            state_var.set(row[8])
+            zip_var.set(row[9])
                 
         mycursor.close()
 
 
          #====Input Field Labels====#
         supplier_name_Label = Label(bottomFrame, text="Supplier Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=0, sticky=W)
-        contact_first_Label = Label(bottomFrame, text="First Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=1, sticky=W)
-        contact_last_Label = Label(bottomFrame, text="Last Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=2, sticky=W)
-        contact_email_Label = Label(bottomFrame, text="Email: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=3, sticky=W)
-        contact_phone_Label = Label(bottomFrame, text="Phone: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=4, sticky=W)
+        contact_first_Label = Label(bottomFrame, text="Contact First Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=1, sticky=W)
+        contact_last_Label = Label(bottomFrame, text="Contact Last Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=2, sticky=W)
+        contact_email_Label = Label(bottomFrame, text="Contact Email: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=3, sticky=W)
+        contact_phone_Label = Label(bottomFrame, text="Contact Phone: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=4, sticky=W)
         address_Label = Label(bottomFrame, text="Address: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=5, sticky=W)
         city_Label = Label(bottomFrame, text="City: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=6, sticky=W)
         state_Label = Label(bottomFrame, text="State: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=7, sticky=W)
         zip_Label = Label(bottomFrame, text="Zip: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=8, sticky=W)
-       
         
+        supplier_name_Entry = Entry(bottomFrame, textvariable=supplier_name_var, font="Verdana 11 bold")
+        contact_first_Entry = Entry(bottomFrame, textvariable=contact_first_var, font="Verdana 11 bold")
+        contact_last_Entry = Entry(bottomFrame, textvariable=contact_last_var, font="Verdana 11 bold")
+        contact_email_Entry = Entry(bottomFrame, textvariable=contact_email_var, font="Verdana 11 bold")
+        contact_phone_Entry = Entry(bottomFrame, textvariable=contact_phone_var, font="Verdana 11 bold")
+        address_Entry = Entry(bottomFrame, textvariable=address_var, font="Verdana 11 bold")
+        city_Entry = Entry(bottomFrame, textvariable=city_var, font="Verdana 11 bold")
+        state_Entry = Entry(bottomFrame, textvariable=state_var, font="Verdana 11 bold")
+        zip_Entry = Entry(bottomFrame, textvariable=zip_var, font="Verdana 11 bold")
+        
+        supplier_name_Entry.grid(row=0, column=1, sticky=W, pady=5)
+        contact_first_Entry.grid(row=1, column=1, sticky=W, pady=5)
+        contact_last_Entry.grid(row=2, column=1, sticky=W, pady=5)
+        contact_email_Entry.grid(row=3, column=1, sticky=W, pady=5)
+        contact_phone_Entry.grid(row=4, column=1, sticky=W, pady=5)
+        address_Entry.grid(row=5, column=1, sticky=W, pady=5)
+        city_Entry.grid(row=6, column=1, sticky=W, pady=5)
+        state_Entry.grid(row=7, column=1, sticky=E, pady=5)
+        zip_Entry.grid(row=8, column=1, sticky=W, pady=5)
+
+        def write2db():
+            ###UPDATE THIS SCRIPT###
+            insertNewSupplier = """INSERT INTO (supplier_company, supplier_contact_first, supplier_contact_last, supplier_email, \
+            supplier_contact_phone, supplier_address, supplier_city, supplier_state, supplier_zip) \
+            VALUES ({},{},{},{},{},{},{},{},{})"""
+
+            supplier_records = (supplier_name_Entry.get(), contact_first_Entry.get(), contact_last_Entry.get(), contact_email_Entry.get(), contact_phone_Entry.get(), address_Entry.get(), city_Entry.get(), state_Entry.get(), zip_Entry.get())
+
+            with mydb.cursor() as cursor:
+                cursor.execute(insertNewSupplier, supplier_records)
+                mydb.commit()
+                cursor.close()
+            
+        def clearEntries():
+            supplier_name_var.set('')
+            contact_first_var.set('')
+            contact_last_var.set('')
+            contact_email_var.set('')
+            contact_phone_var.set('')
+            address_var.set('')
+            city_var.set('')
+            state_var.set('')
+            zip_var.set('')
+            
+
+        #====Buttons====#
+        save_btn = Button(btnFrame, text="Save", height=2, width=20, command=write2db).grid(row=0, column=0, padx=10, pady=15)
+        clear_btn = Button(btnFrame, text="Clear", height=2, width=20, command=clearEntries).grid(row=0, column=1, padx=10, pady=15)
 
         
-
-        #====Input Field Entries====#
-        supplier_name = Entry(bottomFrame, textvariable=supplier_name_var, font=('arial', 16), width=30, justify='center')
-        contact_first = Entry(bottomFrame, textvariable=contact_first_var, font=('arial', 16), width=30, justify='center')
-        contact_last = Entry(bottomFrame, textvariable=contact_last_var, font=('arial', 16), width=30, justify='center')
-        contact_email = Entry(bottomFrame, textvariable=contact_email_var, font=('arial', 16), width=30, justify='center')
-        contact_phone = Entry(bottomFrame, textvariable=contact_phone_var, font=('arial', 16), width=30, justify='center')
-        address = Entry(bottomFrame, textvariable=address_var, font=('arial', 16), width=30, justify='center')
-        city = Entry(bottomFrame, textvariable=city_var, font=('arial', 16), width=30, justify='center')
-        state = Entry(bottomFrame, textvariable=state_var, font=('arial', 16), width=30, justify='center')
-        zip_code = Entry(bottomFrame, textvariable=zip_var, font=('arial', 16), width=30, justify='center')
-        
-        
-        
-     
-
-        #====Grid Inserts====#
-        supplier_name.grid(row=0, column=1, pady=5)
-        contact_first.grid(row=1, column=1, pady=5)
-        contact_last.grid(row=3, column=1, pady=5)
-        contact_email.grid(row=4, column=1, pady=5)
-        contact_phone.grid(row=5, column=1, pady=5)
-        address.grid(row=6, column=1, pady=5)
-        city.grid(row=7, column=1, pady=5)
-        state.grid(row=8, column=1, pady=5)
-        zip_code.grid(row=9, column=1, pady=5)
-        
-
-       
-      
-
 
     def addSupplier():
         top = Toplevel()
-        top.title('Add Suppliers')
+        top.title('Add New Item')
         #top.iconbitmap('C:/Users/Jason/Documents/GMU/2021-01-Spring/IT-493_Capstone/ProjectFiles/favicon.ico')
         
         #====window frames=====#
@@ -910,21 +927,22 @@ class Vendors:
         topFrame.config(bg="#BDBDBD")
         topFrame.pack(pady=50)
 
-        bottomFrame = Frame(top, highlightbackground="white", highlightthickness=4)
+        bottomFrame = Frame(top)
         bottomFrame.config(bg="#BDBDBD")
         bottomFrame.pack()
 
-        btnFrame = Frame(top, highlightbackground="black", highlightthickness=4)
+        btnFrame = Frame(top)
         btnFrame.config(bg="#BDBDBD")
         btnFrame.pack(pady=0)
 
         #=====header label=====#
-        add_label = Label(topFrame, text="View Record Info", fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold").pack()
+        add_label = Label(topFrame, text="Add New Supplier", fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold").pack()
         top.geometry("800x950")
         top.config(bg="#BDBDBD")
 
         #-----------------------------#
         #====Create Variables====#
+        
         supplier_name_var = StringVar()
         contact_first_var = StringVar()
         contact_last_var = StringVar()
@@ -935,55 +953,44 @@ class Vendors:
         state_var = StringVar()
         zip_var = IntVar()
 
-
-
          #====Input Field Labels====#
         supplier_name_Label = Label(bottomFrame, text="Supplier Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=0, sticky=W)
-        contact_first_Label = Label(bottomFrame, text="First Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=1, sticky=W)
-        contact_last_Label = Label(bottomFrame, text="Last Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=2, sticky=W)
-        contact_email_Label = Label(bottomFrame, text="Email: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=3, sticky=W)
-        contact_phone_Label = Label(bottomFrame, text="Phone: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=4, sticky=W)
+        contact_first_Label = Label(bottomFrame, text="Contact First Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=1, sticky=W)
+        contact_last_Label = Label(bottomFrame, text="Contact Last Name: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=2, sticky=W)
+        contact_email_Label = Label(bottomFrame, text="Contact Email: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=3, sticky=W)
+        contact_phone_Label = Label(bottomFrame, text="Contact Phone: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=4, sticky=W)
         address_Label = Label(bottomFrame, text="Address: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=5, sticky=W)
         city_Label = Label(bottomFrame, text="City: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=6, sticky=W)
         state_Label = Label(bottomFrame, text="State: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=7, sticky=W)
         zip_Label = Label(bottomFrame, text="Zip: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=8, sticky=W)
-       
         
-
+        supplier_name_Entry = Entry(bottomFrame, textvariable=supplier_name_var, font="Verdana 11 bold")
+        contact_first_Entry = Entry(bottomFrame, textvariable=contact_first_var, font="Verdana 11 bold")
+        contact_last_Entry = Entry(bottomFrame, textvariable=contact_last_var, font="Verdana 11 bold")
+        contact_email_Entry = Entry(bottomFrame, textvariable=contact_email_var, font="Verdana 11 bold")
+        contact_phone_Entry = Entry(bottomFrame, textvariable=contact_phone_var, font="Verdana 11 bold")
+        address_Entry = Entry(bottomFrame, textvariable=address_var, font="Verdana 11 bold")
+        city_Entry = Entry(bottomFrame, textvariable=city_var, font="Verdana 11 bold")
+        state_Entry = Entry(bottomFrame, textvariable=state_var, font="Verdana 11 bold")
+        zip_Entry = Entry(bottomFrame, textvariable=zip_var, font="Verdana 11 bold")
         
-
-        #====Input Field Entries====#
-        supplier_name = Entry(bottomFrame, textvariable=supplier_name_var, font=('arial', 16), width=30, justify='center')
-        contact_first = Entry(bottomFrame, textvariable=contact_first_var, font=('arial', 16), width=30, justify='center')
-        contact_last = Entry(bottomFrame, textvariable=contact_last_var, font=('arial', 16), width=30, justify='center')
-        contact_email = Entry(bottomFrame, textvariable=contact_email_var, font=('arial', 16), width=30, justify='center')
-        contact_phone = Entry(bottomFrame, textvariable=contact_phone_var, font=('arial', 16), width=30, justify='center')
-        address = Entry(bottomFrame, textvariable=address_var, font=('arial', 16), width=30, justify='center')
-        city = Entry(bottomFrame, textvariable=city_var, font=('arial', 16), width=30, justify='center')
-        state = Entry(bottomFrame, textvariable=state_var, font=('arial', 16), width=30, justify='center')
-        zip_code = Entry(bottomFrame, textvariable=zip_var, font=('arial', 16), width=30, justify='center')
-        
-        
-        
-     
-
-        #====Grid Inserts====#
-        supplier_name.grid(row=0, column=1, pady=5)
-        contact_first.grid(row=1, column=1, pady=5)
-        contact_last.grid(row=3, column=1, pady=5)
-        contact_email.grid(row=4, column=1, pady=5)
-        contact_phone.grid(row=5, column=1, pady=5)
-        address.grid(row=6, column=1, pady=5)
-        city.grid(row=7, column=1, pady=5)
-        state.grid(row=8, column=1, pady=5)
-        zip_code.grid(row=9, column=1, pady=5)
+        supplier_name_Entry.grid(row=0, column=1, sticky=W, pady=5)
+        contact_first_Entry.grid(row=1, column=1, sticky=W, pady=5)
+        contact_last_Entry.grid(row=2, column=1, sticky=W, pady=5)
+        contact_email_Entry.grid(row=3, column=1, sticky=W, pady=5)
+        contact_phone_Entry.grid(row=4, column=1, sticky=W, pady=5)
+        address_Entry.grid(row=5, column=1, sticky=W, pady=5)
+        city_Entry.grid(row=6, column=1, sticky=W, pady=5)
+        state_Entry.grid(row=7, column=1, sticky=E, pady=5)
+        zip_Entry.grid(row=8, column=1, sticky=W, pady=5)
 
         def write2db():
             ###UPDATE THIS SCRIPT###
-            insertNewSupplier = """INSERT INTO (supplier_company, supplier_contact_first, supplier_contact_last, supplier_contact_email, supplier_contact_phone, supplier_address, supplier_city, supplier_state, supplier_zip) \
+            insertNewSupplier = """INSERT INTO (supplier_company, supplier_contact_first, supplier_contact_last, supplier_email, \
+            supplier_contact_phone, supplier_address, supplier_city, supplier_state, supplier_zip) \
             VALUES ({},{},{},{},{},{},{},{},{})"""
 
-            supplier_records = (supplier_name.get(), contact_first.get(), contact_first.get(), contact_first.get(), contact_first.get(), address.get(), city.get(), state.get(), zip_code.get())
+            supplier_records = (supplier_name_Entry.get(), contact_first_Entry.get(), contact_last_Entry.get(), contact_email_Entry.get(), contact_phone_Entry.get(), address_Entry.get(), city_Entry.get(), state_Entry.get(), zip_Entry.get())
 
             with mydb.cursor() as cursor:
                 cursor.execute(insertNewSupplier, supplier_records)
@@ -991,22 +998,20 @@ class Vendors:
                 cursor.close()
             
         def clearEntries():
-            supplier_name_var.set('') 
-            contact_first_var.set('')   
-            contact_last_var.set('')   
-            contact_email_var.set('')  
-            contact_phone_var.set('')  
-            address_var.set('')  
-            city_var.set('')  
-            state_var.set('')  
-            zip_var.set('')  
-
-
-    
+            supplier_name_var.set('')
+            contact_first_var.set('')
+            contact_last_var.set('')
+            contact_email_var.set('')
+            contact_phone_var.set('')
+            address_var.set('')
+            city_var.set('')
+            state_var.set('')
+            zip_var.set('')
+            
 
         #====Buttons====#
-        save_btn = Button(btnFrame2, text="Save", height=2, width=20, command=write2db).grid(row=0, column=0, padx=10, pady=15)
-        clear_btn = Button(btnFrame2, text="Clear", height=2, width=20, command=clearEntries).grid(row=0, column=1, padx=10, pady=15)
+        save_btn = Button(btnFrame, text="Save", height=2, width=20, command=write2db).grid(row=0, column=0, padx=10, pady=15)
+        clear_btn = Button(btnFrame, text="Clear", height=2, width=20, command=clearEntries).grid(row=0, column=1, padx=10, pady=15)
 
 
 class Quantity:
@@ -1040,7 +1045,7 @@ viewProductsBTN.pack(pady=20)
 viewPartsBTN = Button(bottomFrame, text="View Parts", padx=119, pady=20, font="Verdana 16", command=Parts.viewPart)
 viewPartsBTN.pack(pady=20)
 
-viewVendorsBTN = Button(bottomFrame, text="View Vendors", padx=103, pady=20, font="Verdana 16", command=Vendors.viewVendor)
+viewVendorsBTN = Button(bottomFrame, text="View Suppliers", padx=103, pady=20, font="Verdana 16", command=Vendors.viewSupplier)
 viewVendorsBTN.pack(pady=20)
 
 updateQuantityBTN = Button(bottomFrame, text="Update Qty", padx=114, pady=20, font="Verdana 16", command=Quantity.updateQty)
