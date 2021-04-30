@@ -127,6 +127,15 @@ class Products:
         
         #print (a)
 
+        def deleteProd():
+            msg = messagebox.askquestion("Delete Confirmation", "Are you sure you want to delete this entry?", icon="warning", parent=top)
+            if msg == "yes":
+                newCur = mydb.cursor()
+                newCur.execute("DELETE FROM product WHERE product_id = '{}'".format(y))
+                mydb.commit()
+                newCur.close()
+
+
         #=====Buttons=====#
         addProductBTN = Button(bottomFrame, text="Add New Product", padx=20, pady=10, font="Verdana 14", command=Products.addProduct)
         addProductBTN.grid(column=0, row=0, padx=20)
@@ -134,7 +143,7 @@ class Products:
         viewProductBTN = Button(bottomFrame, text="View/Edit", padx=20, pady=10, font="Verdana 14", command=Products.viewInfo)
         viewProductBTN.grid(column=1, row=0, padx=20)
 
-        delProductBTN = Button(bottomFrame, text="Delete Product", padx=20, pady=10, font="Verdana 14")#, command=Products.viewInfo)
+        delProductBTN = Button(bottomFrame, text="Delete Product", padx=20, pady=10, font="Verdana 14", command=deleteProd)
         delProductBTN.grid(column=2, row=0, padx=20)
 
       
@@ -154,11 +163,11 @@ class Products:
         topFrame.config(bg="#BDBDBD")
         topFrame.pack(pady=50)
 
-        bottomFrame = Frame(top, highlightbackground="white", highlightthickness=4)
+        bottomFrame = Frame(top)
         bottomFrame.config(bg="#BDBDBD")
         bottomFrame.pack()
 
-        btnFrame = Frame(top, highlightbackground="black", highlightthickness=4)
+        btnFrame = Frame(top)
         btnFrame.config(bg="#BDBDBD")
         btnFrame.pack(pady=0)
 
@@ -176,13 +185,18 @@ class Products:
         unit_var = StringVar()
         install_time_var = IntVar()
         delivery_time_var = IntVar()
-
+        dropdown_sup = StringVar(bottomFrame)
         
         mycursor = mydb.cursor()
         mycursor.execute("SELECT * FROM product WHERE product_id = {};".format(y))
         myresult = mycursor.fetchall()
            
         for row in myresult:
+            cur2 = mydb.cursor()
+            cur2.execute("SELECT supplier_company FROM supplier WHERE supplier_id = {};".format(row[1]))
+            newResult = cur2.fetchone()
+            dropdown_sup.set(newResult)
+            cur2.close()
             serial_num_var.set(row[2]) 
             item_name_var.set(row[3]) 
             price_listed_var.set(row[6]) 
@@ -208,15 +222,20 @@ class Products:
         delivery_time_Label = Label(bottomFrame, text="Est. Delivery Time: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=9, sticky=W)
         delivery_time_Label2 = Label(bottomFrame, text=" days       ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=9, column=1, sticky=E)
 
-        
+        newCur = mydb.cursor()
+        newCur.execute('SELECT supplier_company FROM supplier')
+        results = newCur.fetchall()
+        sups = []
+        for values in results:
+            sups.append(values)
+        newCur.close()
 
         #====Input Field Entries====#
         serial_num = Entry(bottomFrame, textvariable=serial_num_var, font=('arial', 16), width=30, justify='center')
         item_name = Entry(bottomFrame, textvariable=item_name_var, font=('arial', 16), width=30, justify='center')
         # dropdown
-        dropdown_sup = StringVar(bottomFrame)
-        dropdown_sup.set("Choose One")
-        dd_sup = OptionMenu(bottomFrame, dropdown_sup, "1", "2", "3") #SQL list of suppliers)
+        
+        dd_sup = OptionMenu(bottomFrame, dropdown_sup, *sups) #SQL list of suppliers)
         dd_sup.config(width=53, anchor=W)
         dd_sup.grid(row=2, column=1, pady=5)
         price_listed = Entry(bottomFrame, textvariable=price_listed_var, font=('arial', 16), width=30, justify='center')
@@ -253,7 +272,24 @@ class Products:
         install_time.grid(row=8, column=1, pady=5, sticky=W)
         delivery_time.grid(row=9, column=1, pady=5, sticky=W)
 
-       
+        def write2db():
+            
+            updateProd = """UPDATE product SET product_number = '{}', product_name = '{}', \
+            product_price = '{}', product_cost = '{}', product_unit = '{}', product_install_time = '{}', product_estimated_delivery_time = '{}' \
+            WHERE product_id = '{}'""".format(serial_num.get(), item_name.get(), price_listed.get(), price_cost.get(), unit.get(), install_time.get(), delivery_time.get(), y)
+
+            cur2 = mydb.cursor()
+            cur2.execute(updateProd)
+            mydb.commit()
+            cur2.close()
+
+            messagebox.showinfo(parent=top, title='Successful Save', message='Product has been updated.')
+
+
+        #====Buttons====#
+        save_btn = Button(btnFrame, text="Save", height=2, width=20, command=write2db).grid(row=0, column=0, padx=10, pady=15)
+        clear_btn = Button(btnFrame, text="Clear", height=2, width=20).grid(row=0, column=1, padx=10, pady=15) #, command=clearEntries
+
       
 
 
@@ -304,13 +340,21 @@ class Products:
         install_time_var = IntVar()
         delivery_time_var = IntVar()
 
+        newCur = mydb.cursor()
+        newCur.execute('SELECT supplier_company FROM supplier')
+        results = newCur.fetchall()
+        sups = []
+        for values in results:
+            sups.append(values)
+        newCur.close()
+
         #====Input Field Entries====#
         serial_num = Entry(bottomFrame2, textvariable=serial_num_var, font=('arial', 16), width=30, justify='center')
         item_name = Entry(bottomFrame2, textvariable=item_name_var, font=('arial', 16), width=30, justify='center')
         # dropdown
         dropdown_sup = StringVar(bottomFrame2)
         dropdown_sup.set("Choose One")
-        dd_sup = OptionMenu(bottomFrame2, dropdown_sup, "1", "2", "3") #SQL list of suppliers)
+        dd_sup = OptionMenu(bottomFrame2, dropdown_sup, *sups)
         dd_sup.config(width=53, anchor=W)
         dd_sup.grid(row=2, column=1, pady=5)
         price_listed = Entry(bottomFrame2, textvariable=price_listed_var, font=('arial', 16), width=30, justify='center')
@@ -349,16 +393,19 @@ class Products:
 
         def write2db():
             ###UPDATE THIS SCRIPT###
-            insertNewProduct = """INSERT INTO (product_supplier_id, product_number, product_name, product_quantity_available, \
-            product_quantity_onhand, product_price, product_cost, product_unit, product_part_predecessor) \
-            VALUES ({},{},{},{},{},{},{},{},{})"""
+            insertNewProduct = """INSERT INTO product (product_supplier_id, product_number, product_name, product_quantity_available, \
+            product_quantity_onhand, product_price, product_cost, product_unit, product_part_predecessor, product_install_time, product_estimated_delivery_time) \
+            VALUES ('{}','{}','{}','{}','{}','{}','{}','{}','{}','{}','{}')""".format(400001, serial_num.get(), item_name.get(), 0, 0, price_listed.get(), price_cost.get(), unit.get(), 'None', install_time.get(), delivery_time.get())
 
-            product_records = (dropdown_sup, serial_num.get(), item_name.get(), 0, 0, price_listed.get(), price_cost.get(), unit.get(), install_time.get(), delivery_time.get(), int(pred_tree.item(pred_tree.selection(),"ID")))
+            
+            cur1 = mydb.cursor()
+            cur1.execute(insertNewProduct)
+            mydb.commit()
+            cur1.close()
 
-            with mydb.cursor() as cursor:
-                cursor.execute(insertNewProduct, product_records)
-                mydb.commit()
-                cursor.close()
+            clearEntries()
+            messagebox.showinfo(parent=top, title='Successful Save', message='Product has been saved.')
+            
             
         def clearEntries():
             serial_num_var.set('')
@@ -468,6 +515,13 @@ class Parts:
         part_tree.bind('<ButtonRelease-1>', selectItem)
         
         #print (a)
+        def deletePart():
+            msg = messagebox.askquestion("Delete Confirmation", "Are you sure you want to delete this entry?", icon="warning", parent=top)
+            if msg == "yes":
+                newCur = mydb.cursor()
+                newCur.execute("DELETE FROM part WHERE part_id = '{}'".format(y))
+                mydb.commit()
+                newCur.close()
 
         #=====Buttons=====#
         addPartBTN = Button(bottomFrame, text="Add New Part", padx=20, pady=10, font="Verdana 14", command=Parts.addPart)
@@ -476,7 +530,7 @@ class Parts:
         viewPartBTN = Button(bottomFrame, text="View/Edit", padx=20, pady=10, font="Verdana 14", command=Parts.viewInfo)
         viewPartBTN.grid(column=1, row=0, padx=20)
 
-        delPartBTN = Button(bottomFrame, text="Delete Part", padx=20, pady=10, font="Verdana 14")#, command=Parts.viewInfo)
+        delPartBTN = Button(bottomFrame, text="Delete Part", padx=20, pady=10, font="Verdana 14", command=deletePart)
         delPartBTN.grid(column=2, row=0, padx=20)
 
       
@@ -496,11 +550,11 @@ class Parts:
         topFrame.config(bg="#BDBDBD")
         topFrame.pack(pady=50)
 
-        bottomFrame = Frame(top, highlightbackground="white", highlightthickness=4)
+        bottomFrame = Frame(top)
         bottomFrame.config(bg="#BDBDBD")
         bottomFrame.pack()
 
-        btnFrame = Frame(top, highlightbackground="black", highlightthickness=4)
+        btnFrame = Frame(top)
         btnFrame.config(bg="#BDBDBD")
         btnFrame.pack(pady=0)
 
@@ -518,13 +572,19 @@ class Parts:
         unit_var = StringVar()
         install_time_var = IntVar()
         delivery_time_var = IntVar()
-
+        dropdown_sup = StringVar(bottomFrame)
+        
         
         mycursor = mydb.cursor()
         mycursor.execute("SELECT * FROM part WHERE part_id = {};".format(y))
         myresult = mycursor.fetchall()
            
         for row in myresult:
+            cur2 = mydb.cursor()
+            cur2.execute("SELECT supplier_company FROM supplier WHERE supplier_id = {};".format(row[1]))
+            newResult = cur2.fetchone()
+            dropdown_sup.set(newResult)
+            cur2.close()
             serial_num_var.set(row[2]) 
             item_name_var.set(row[3]) 
             price_listed_var.set(row[6]) 
@@ -550,15 +610,20 @@ class Parts:
         delivery_time_Label = Label(bottomFrame, text="Est. Delivery Time: ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=9, sticky=W)
         delivery_time_Label2 = Label(bottomFrame, text=" days       ", bg="#BDBDBD", font="Verdana 11 bold").grid(row=9, column=1, sticky=E)
 
-        
+        newCur = mydb.cursor()
+        newCur.execute('SELECT supplier_company FROM supplier')
+        results = newCur.fetchall()
+        sups = []
+        for values in results:
+            sups.append(values)
+        newCur.close()
 
         #====Input Field Entries====#
         serial_num = Entry(bottomFrame, textvariable=serial_num_var, font=('arial', 16), width=30, justify='center')
         item_name = Entry(bottomFrame, textvariable=item_name_var, font=('arial', 16), width=30, justify='center')
         # dropdown
-        dropdown_sup = StringVar(bottomFrame)
-        dropdown_sup.set("Choose One")
-        dd_sup = OptionMenu(bottomFrame, dropdown_sup, "1", "2", "3") #SQL list of suppliers)
+        
+        dd_sup = OptionMenu(bottomFrame, dropdown_sup, *sups) #SQL list of suppliers)
         dd_sup.config(width=53, anchor=W)
         dd_sup.grid(row=2, column=1, pady=5)
         price_listed = Entry(bottomFrame, textvariable=price_listed_var, font=('arial', 16), width=30, justify='center')
@@ -579,7 +644,27 @@ class Parts:
         install_time.grid(row=8, column=1, pady=5, sticky=W)
         delivery_time.grid(row=9, column=1, pady=5, sticky=W)
 
-       
+        def write2db():
+            
+            updatePart = """UPDATE part SET part_serial_no = '{}', part_name = '{}', \
+            part_price = '{}', part_cost = '{}', part_unit = '{}', part_install_time = '{}', part_estimated_delivery_time = '{}' \
+            WHERE part_id = '{}'""".format(serial_num.get(), item_name.get(), price_listed.get(), price_cost.get(), unit.get(), install_time.get(), delivery_time.get(), y)
+
+            cur2 = mydb.cursor()
+            cur2.execute(updatePart)
+            mydb.commit()
+            cur2.close()
+
+            messagebox.showinfo(parent=top, title='Successful Save', message='Part has been updated.')
+            
+        
+
+
+
+        #====Buttons====#
+        save_btn = Button(btnFrame, text="Save", height=2, width=20, command=write2db).grid(row=0, column=0, padx=10, pady=15)
+        clear_btn = Button(btnFrame, text="Clear", height=2, width=20).grid(row=0, column=1, padx=10, pady=15) #, command=clearEntries
+
 
       
 
@@ -631,13 +716,21 @@ class Parts:
         install_time_var = IntVar()
         delivery_time_var = IntVar()
 
+        newCur = mydb.cursor()
+        newCur.execute('SELECT supplier_company FROM supplier')
+        results = newCur.fetchall()
+        sups = []
+        for values in results:
+            sups.append(values)
+        newCur.close()
+
         #====Input Field Entries====#
         serial_num = Entry(bottomFrame2, textvariable=serial_num_var, font=('arial', 16), width=30, justify='center')
         item_name = Entry(bottomFrame2, textvariable=item_name_var, font=('arial', 16), width=30, justify='center')
         # dropdown
         dropdown_sup = StringVar(bottomFrame2)
         dropdown_sup.set("Choose One")
-        dd_sup = OptionMenu(bottomFrame2, dropdown_sup, "1", "2", "3") #SQL list of suppliers)
+        dd_sup = OptionMenu(bottomFrame2, dropdown_sup, *sups)
         dd_sup.config(width=53, anchor=W)
         dd_sup.grid(row=2, column=1, pady=5)
         price_listed = Entry(bottomFrame2, textvariable=price_listed_var, font=('arial', 16), width=30, justify='center')
@@ -659,17 +752,22 @@ class Parts:
         delivery_time.grid(row=9, column=1, pady=5, sticky=W)
 
         def write2db():
-            ###UPDATE THIS SCRIPT###
-            insertNewPart = """INSERT INTO (part_supplier_id, part_number, part_name, part_quantity_available, \
-            part_quantity_onhand, part_price, part_cost, part_unit, part_install_time, part_estimated_deliver_time) \
-            VALUES ({},{},{},{},{},{},{},{},{},{})"""
+            
+            insertNewPart = """INSERT INTO part (part_supplier_id, part_serial_no, part_name, part_quantity_available, \
+            part_quantity_onhand, part_price, part_cost, part_unit, part_install_time, part_estimated_delivery_time) \
+            VALUES ('{}','{}','{}','{}','{}','{}','{}','{}','{}','{}');""".format(400001, serial_num.get(), item_name.get(), 0, 0, price_listed.get(), price_cost.get(), unit.get(), install_time.get(), delivery_time.get())
+
 
             part_records = (dropdown_sup, serial_num.get(), item_name.get(), 0, 0, price_listed.get(), price_cost.get(), unit.get(), install_time.get(), delivery_time.get())
 
-            with mydb.cursor() as cursor:
-                cursor.execute(insertNewPart, part_records)
-                mydb.commit()
-                cursor.close()
+            cur1 = mydb.cursor()
+            cur1.execute(insertNewPart)
+            mydb.commit()
+            cur1.close()
+
+            clearEntries()
+            messagebox.showinfo(parent=top, title='Successful Save', message='Part has been saved.')
+            
             
         def clearEntries():
             serial_num_var.set('')
@@ -715,7 +813,7 @@ class Vendors:
         dropDWN = StringVar(topFrame)
         dropDWN.set("Sort By:")
 
-        dd = OptionMenu(topFrame, dropDWN, "ID", "Name", "Price", "QTY Avail.", "QTY On Hand")
+        dd = OptionMenu(topFrame, dropDWN, "ID", "Name", "Contact First", "Contact Last")
         dd.config(width=15, anchor=W)
         dd.grid(row=1, column=0, sticky=E, padx=10)
 
@@ -779,8 +877,14 @@ class Vendors:
         #a = supplier_tree.bind('<ButtonRelease-1>', selectItem)
 
         supplier_tree.bind('<ButtonRelease-1>', selectItem)
-        
-        #print (a)
+
+        def deleteSupplier():
+            msg = messagebox.askquestion("Delete Confirmation", "Are you sure you want to delete this entry?", icon="warning", parent=top)
+            if msg == "yes":
+                newCur = mydb.cursor()
+                newCur.execute("DELETE FROM supplier WHERE supplier_id = '{}'".format(y))
+                mydb.commit()
+                newCur.close()
 
         #=====Buttons=====#
         addSupplierBTN = Button(bottomFrame, text="Add New Supplier", padx=20, pady=10, font="Verdana 14", command=Vendors.addSupplier)
@@ -789,7 +893,7 @@ class Vendors:
         viewSupplierBTN = Button(bottomFrame, text="View/Edit", padx=20, pady=10, font="Verdana 14", command=Vendors.viewInfo)
         viewSupplierBTN.grid(column=1, row=0, padx=20)
 
-        delSupplierBTN = Button(bottomFrame, text="Delete Supplier", padx=20, pady=10, font="Verdana 14")#, command=Vendors.viewInfo)
+        delSupplierBTN = Button(bottomFrame, text="Delete Supplier", padx=20, pady=10, font="Verdana 14", command=deleteSupplier)
         delSupplierBTN.grid(column=2, row=0, padx=20)
 
       
@@ -888,16 +992,20 @@ class Vendors:
 
         def write2db():
             ###UPDATE THIS SCRIPT###
-            insertNewSupplier = """INSERT INTO (supplier_company, supplier_contact_first, supplier_contact_last, supplier_email, \
-            supplier_contact_phone, supplier_address, supplier_city, supplier_state, supplier_zip) \
-            VALUES ({},{},{},{},{},{},{},{},{})"""
+            updateSupplier = """UPDATE supplier SET supplier_company = '{}', supplier_contact_first = '{}', supplier_contact_last = '{}', supplier_email = '{}', \
+            supplier_contact_phone = '{}', supplier_address = '{}', supplier_city = '{}', supplier_state = '{}', supplier_zip = '{}' \
+            WHERE supplier_id = '{}'""".format(supplier_name_Entry.get(), contact_first_Entry.get(), contact_last_Entry.get(), contact_email_Entry.get(), contact_phone_Entry.get(), address_Entry.get(), city_Entry.get(), state_Entry.get(), zip_Entry.get(), y)
+
 
             supplier_records = (supplier_name_Entry.get(), contact_first_Entry.get(), contact_last_Entry.get(), contact_email_Entry.get(), contact_phone_Entry.get(), address_Entry.get(), city_Entry.get(), state_Entry.get(), zip_Entry.get())
 
-            with mydb.cursor() as cursor:
-                cursor.execute(insertNewSupplier, supplier_records)
-                mydb.commit()
-                cursor.close()
+            cur2 = mydb.cursor()
+            cur2.execute(updateSupplier)
+            mydb.commit()
+            cur2.close()
+
+            messagebox.showinfo(parent=top, title='Successful Save', message='Supplier has been updated.')
+            
             
         def clearEntries():
             supplier_name_var.set('')
@@ -986,16 +1094,22 @@ class Vendors:
 
         def write2db():
             ###UPDATE THIS SCRIPT###
-            insertNewSupplier = """INSERT INTO (supplier_company, supplier_contact_first, supplier_contact_last, supplier_email, \
+            insertNewSupplier = """INSERT INTO supplier (supplier_company, supplier_contact_first, supplier_contact_last, supplier_email, \
             supplier_contact_phone, supplier_address, supplier_city, supplier_state, supplier_zip) \
-            VALUES ({},{},{},{},{},{},{},{},{})"""
+            VALUES ('{}','{}','{}','{}','{}','{}','{}','{}','{}');""".format(supplier_name_Entry.get(), contact_first_Entry.get(), contact_last_Entry.get(), contact_email_Entry.get(), contact_phone_Entry.get(), address_Entry.get(), city_Entry.get(), state_Entry.get(), zip_Entry.get())
+
 
             supplier_records = (supplier_name_Entry.get(), contact_first_Entry.get(), contact_last_Entry.get(), contact_email_Entry.get(), contact_phone_Entry.get(), address_Entry.get(), city_Entry.get(), state_Entry.get(), zip_Entry.get())
 
-            with mydb.cursor() as cursor:
-                cursor.execute(insertNewSupplier, supplier_records)
-                mydb.commit()
-                cursor.close()
+            cur1 = mydb.cursor()
+            cur1.execute(insertNewSupplier)
+            mydb.commit()
+            cur1.close()
+
+            clearEntries()
+            messagebox.showinfo(parent=top, title='Successful Save', message='Supplier has been saved.')
+            
+
             
         def clearEntries():
             supplier_name_var.set('')
@@ -1029,6 +1143,132 @@ class Quantity:
         add_label = Label(topFrame2, text="Update Quantity", fg="#003B6D", bg="#BDBDBD", font="Verdana 36 bold").pack()
         top.geometry("800x950")
         top.config(bg="#BDBDBD")
+
+        #=====NEW CODE=====#
+        myTabs = ttk.Notebook(top)
+        partsTab = Frame(myTabs)
+        prodsTab = Frame(myTabs)
+
+        myTabs.add(partsTab, text='  Parts  ')
+        myTabs.add(prodsTab, text=' Products ')
+        myTabs.pack(expand=1, fill='both')
+
+        product_h1 = StringVar()
+        product_h2 = StringVar()
+        product_h3 = StringVar()
+        product_h4 = StringVar()
+        product_onhand = [product_h1,product_h2,product_h3,product_h4]
+
+        product_a1 = StringVar()
+        product_a2 = StringVar()
+        product_a3 = StringVar()
+        product_a4 = StringVar()
+        product_avail = [product_a1,product_a2,product_a3,product_a4]
+
+
+        part_h1 = StringVar()
+        part_h2 = StringVar()
+        part_h3 = StringVar()
+        part_h4 = StringVar()
+        part_onhand = [part_h1,part_h2,part_h3,part_h4]
+
+        part_a1 = StringVar()
+        part_a2 = StringVar()
+        part_a3 = StringVar()
+        part_a4 = StringVar()
+        part_avail = [part_a1,part_a2,part_a3,part_a4]
+
+        def all_product_update():
+            cursor = mydb.cursor()
+            for i in range(len(product_avail)):
+                if product_avail[i].get() != "":
+                    cursor.execute('''UPDATE product SET product_quantity_available= {} WHERE product_id = {}'''.format(product_avail[i].get(),i+1))
+            messagebox.showinfo(parent=top, title='Successful Save', message='Quantities have been updated')
+            mydb.commit()
+            cursor.close()
+
+        def all_part_update():
+            cursor = mydb.cursor()
+            for i in range(len(part_avail)):
+                if part_avail[i].get() != "":
+                    cursor.execute('''UPDATE part SET part_quantity_available= {} WHERE part_id = {}'''.format(part_avail[i].get(),i+1))
+            messagebox.showinfo(parent=top, title='Successful Save', message='Quantities have been updated')
+            mydb.commit()
+            cursor.close()
+
+
+        part=Label(partsTab,width=20, text='Part Id', borderwidth=2, anchor=CENTER)
+        part.grid(row=0,column=0)
+        part=Label(partsTab,width=50, text='Part Name', borderwidth=2, anchor=CENTER)
+        part.grid(row=0,column=1)
+        part=Label(partsTab,width=20, text='Part Quantity Available', borderwidth=2, anchor=CENTER)
+        part.grid(row=0,column=2)
+
+        cursor = mydb.cursor()
+
+        cursor.execute('''SELECT * from part''')
+
+        rows = cursor.fetchall()
+        i = 0
+        for row in rows:
+            col = 0 
+            for j in range(len(row)):
+                
+                if j == 0:
+                    part = Label(partsTab, width=18, text=row[j],borderwidth=2,anchor='e', bg='white') 
+                    part.grid(row=i+1, column=col)
+                    col += 1                    
+                elif j == 3:
+                    part = Label(partsTab, width=50, text=row[j],borderwidth=2,anchor='w', bg='white') 
+                    part.grid(row=i+1, column=col)
+                    col += 1
+                elif j == 4:
+                    part = Entry(partsTab, width=20, textvariable=part_avail[i], bd=0)
+                    part.grid(row=i+1, column=col)
+                    col += 1  
+            part = ttk.Button(partsTab, text ="Update")#, command = update_quantity)#,borderwidth=2, relief='ridge',anchor='w',bg='white')
+            part.grid(row=i+1, column=col)       
+            i=i+1
+        i = i + 2
+        update_all_part = ttk.Button(partsTab, text ="Save All Updates", command = all_part_update).grid(row=i, column=2, columnspan=2, pady=20)
+
+        i = i + 2
+
+        product=Label(prodsTab,width=20,text='Product Id', borderwidth=2, anchor=CENTER)
+        product.grid(row=i+1,column=0)
+        product=Label(prodsTab,width=50,text='Product Name', borderwidth=2, anchor=CENTER)
+        product.grid(row=i+1,column=1)
+        product=Label(prodsTab,width=20,text='Product Quantity Available', borderwidth=2, anchor=CENTER)
+        product.grid(row=i+1,column=2)
+
+        cursor.execute('''SELECT * from product''')
+
+        rows = cursor.fetchall()
+        i = i + 1
+
+        counter = 0
+        for row in rows:
+            col = 0 
+            for j in range(len(row)):
+                
+                if j == 0:
+                    product = Label(prodsTab,width=18, text=row[j], borderwidth=2, anchor='e', bg='white') 
+                    product.grid(row=i+1, column=col)
+                    col += 1                    
+                elif j == 3:
+                    product = Label(prodsTab,width=50, text=row[j], borderwidth=2,anchor='w', bg='white') 
+                    product.grid(row=i+1, column=col)
+                    col += 1
+                elif j == 4:
+                    product = Entry(prodsTab,width=20, textvariable=product_avail[counter],bd=0)
+                    product.grid(row=i+1, column=col)
+                    col += 1  
+                    counter += 1
+            product = ttk.Button(prodsTab, text ="Update")#, command = update_quantity)#,borderwidth=2, relief='ridge',anchor='w',bg='white')
+            product.grid(row=i+1, column=col)       
+            i=i+1
+        update_all_product = ttk.Button(prodsTab, text ="Save All Updates", command = all_product_update).grid(row=i+2, column=2, columnspan=2, pady=20)
+
 
 
 def openView():
